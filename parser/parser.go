@@ -18,9 +18,16 @@ type State struct {
 }
 
 func Parse(scanner *bufio.Scanner) {
-	_, err := initState(scanner)
+	state, err := initState(scanner)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	fmt.Println(state.Start)
+	fmt.Println(state.Finish)
+	fmt.Println(state.Price)
+	for _, i := range state.IsEmpty {
+		fmt.Println(i)
 	}
 
 	for scanner.Scan() {
@@ -40,6 +47,9 @@ func initState(scanner *bufio.Scanner) (State, error) {
 		return res, errors.New(scanner.Text())
 	}
 	res.IsEmpty = make([]bool, n)
+	for i := range res.IsEmpty {
+		res.IsEmpty[i] = true
+	}
 
 	// parse date.
 	if scanner.Scan() == false {
@@ -49,12 +59,13 @@ func initState(scanner *bufio.Scanner) (State, error) {
 	if len(field) != 2 {
 		return res, errors.New(scanner.Text())
 	}
-	res.Start, err = time.Parse("00:00", field[0])
+	const layout = "15:04"
+	res.Start, err = time.Parse(layout, field[0])
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
 
-	res.Finish, err = time.Parse("00:00", field[1])
+	res.Finish, err = time.Parse(layout, field[1])
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
