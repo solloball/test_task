@@ -10,11 +10,41 @@ import (
 	"time"
 )
 
+type inboxId int
+type outboxId int
+
+const layout = "15:04"
+
+const (
+	id_1 inboxId = iota
+	id_2
+	id_3
+	id_4
+)
+
+const (
+	id_11 outboxId = iota
+	id_12
+	id_13
+)
+
+type Event struct {
+	time  time.Time
+	id    inboxId
+	price int
+	body  []string
+}
+
+type Table struct {
+	IsEmpty   bool
+	usageTime time.Duration
+}
+
 type State struct {
-	Start   time.Time
-	Finish  time.Time
-	IsEmpty []bool
-	Price   int64
+	start  time.Time
+	finish time.Time
+	tables []Table
+	price  int64
 }
 
 func Parse(scanner *bufio.Scanner) {
@@ -23,16 +53,46 @@ func Parse(scanner *bufio.Scanner) {
 		log.Fatal(err)
 	}
 
-	fmt.Println(state.Start)
-	fmt.Println(state.Finish)
-	fmt.Println(state.Price)
-	for _, i := range state.IsEmpty {
-		fmt.Println(i)
-	}
-
+	fmt.Println(state.start) // make format
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
+		event, err := parseEvent(scanner.Text())
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if err := handleEvent(event, &state); err != nil {
+			fmt.Println(err)
+		}
 	}
+	fmt.Println(state.finish) // make format
+}
+
+func handleEvent(event Event, state *State) error {
+	return nil
+}
+
+func parseEvent(input string) (Event, error) {
+	var res Event
+	var err error
+	fields := strings.Fields(input)
+	if len(fields) != 3 && len(fields) != 4 {
+		return res, errors.New(input)
+	}
+
+	res.time, err = time.Parse(layout, fields[0])
+	if err != nil {
+		return res, errors.New(input)
+	}
+
+	val, err := strconv.ParseInt(fields[1], 10, 32)
+	if err != nil {
+		return res, errors.New(input)
+	}
+	res.id = inboxId(val)
+
+	res.body = fields[2:]
+	return res, nil
 }
 
 func initState(scanner *bufio.Scanner) (State, error) {
@@ -46,9 +106,9 @@ func initState(scanner *bufio.Scanner) (State, error) {
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
-	res.IsEmpty = make([]bool, n)
-	for i := range res.IsEmpty {
-		res.IsEmpty[i] = true
+	res.tables = make([]Table, n)
+	for i := range res.tables {
+		res.tables[i] = Table{true, time.Duration(0)}
 	}
 
 	// parse date.
@@ -59,13 +119,12 @@ func initState(scanner *bufio.Scanner) (State, error) {
 	if len(field) != 2 {
 		return res, errors.New(scanner.Text())
 	}
-	const layout = "15:04"
-	res.Start, err = time.Parse(layout, field[0])
+	res.start, err = time.Parse(layout, field[0])
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
 
-	res.Finish, err = time.Parse(layout, field[1])
+	res.finish, err = time.Parse(layout, field[1])
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
@@ -74,7 +133,7 @@ func initState(scanner *bufio.Scanner) (State, error) {
 	if scanner.Scan() == false {
 		return res, errors.New(scanner.Text())
 	}
-	res.Price, err = strconv.ParseInt(scanner.Text(), 10, 32)
+	res.price, err = strconv.ParseInt(scanner.Text(), 10, 32)
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
