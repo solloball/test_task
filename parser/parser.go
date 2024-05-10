@@ -13,6 +13,12 @@ import (
 type inboxId int
 type outboxId int
 
+const (
+	errId              = "13"
+	errAlreadyInside   = "YouShallNotPass"
+	errNonWorkingHours = "NotOpenYet"
+)
+
 const layout = "15:04"
 
 const (
@@ -28,23 +34,33 @@ const (
 	id_13
 )
 
-type Event struct {
+type event struct {
 	time  time.Time
 	id    inboxId
 	price int
 	body  []string
 }
 
-type Table struct {
-	IsEmpty   bool
-	usageTime time.Duration
+type usage struct {
+	time time.Time
+	name visitorName
 }
 
-type State struct {
-	start  time.Time
-	finish time.Time
-	tables []Table
-	price  int64
+type table struct {
+	IsEmpty     bool
+	usageTime   time.Duration
+	sittingTime time.Time
+}
+
+type visitorName string
+
+type state struct {
+	queue    []visitorName
+	visitors []visitorName
+	start    time.Time
+	finish   time.Time
+	tables   []table
+	price    int64
 }
 
 func Parse(scanner *bufio.Scanner) {
@@ -53,7 +69,7 @@ func Parse(scanner *bufio.Scanner) {
 		log.Fatal(err)
 	}
 
-	fmt.Println(state.start) // make format
+	fmt.Println(state.start.Format(layout))
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
 		event, err := parseEvent(scanner.Text())
@@ -65,15 +81,53 @@ func Parse(scanner *bufio.Scanner) {
 			fmt.Println(err)
 		}
 	}
-	fmt.Println(state.finish) // make format
+	fmt.Println(state.finish.Format(layout))
 }
 
-func handleEvent(event Event, state *State) error {
+func handleEvent(ev event, state *state) error {
+	switch ev.id {
+	case id_1:
+		handler1(ev, state)
+		break
+	case id_2:
+		handler2(ev, state)
+		break
+	case id_3:
+		handler3(ev, state)
+		break
+	case id_4:
+		handler4(ev, state)
+		break
+	}
 	return nil
 }
 
-func parseEvent(input string) (Event, error) {
-	var res Event
+func handler1(ev event, state *state) {
+	visitor := ev.body[0]
+	for _, name := range state.visitors {
+		if name == visitorName(visitor) {
+			fmt.Println(ev.time.Format(layout) + " " + errId + "" + errAlreadyInside)
+		}
+	}
+
+	if ev.time.Before(state.start) || ev.time.After(state.finish) {
+		fmt.Println(ev.time.Format(layout) + " " + errId + " " + errNonWorkingHours)
+	}
+
+	state.visitors = append(state.visitors, visitorName(visitor))
+}
+
+func handler2(ev event, state *state) {
+}
+
+func handler3(ev event, state *state) {
+}
+
+func handler4(ev event, state *state) {
+}
+
+func parseEvent(input string) (event, error) {
+	var res event
 	var err error
 	fields := strings.Fields(input)
 	if len(fields) != 3 && len(fields) != 4 {
@@ -95,8 +149,8 @@ func parseEvent(input string) (Event, error) {
 	return res, nil
 }
 
-func initState(scanner *bufio.Scanner) (State, error) {
-	var res State
+func initState(scanner *bufio.Scanner) (state, error) {
+	var res state
 
 	// parse count tables.
 	if scanner.Scan() == false {
@@ -106,9 +160,9 @@ func initState(scanner *bufio.Scanner) (State, error) {
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
-	res.tables = make([]Table, n)
+	res.tables = make([]table, n)
 	for i := range res.tables {
-		res.tables[i] = Table{true, time.Duration(0)}
+		res.tables[i] = table{true, time.Duration(0), time.Time{}}
 	}
 
 	// parse date.
@@ -137,6 +191,9 @@ func initState(scanner *bufio.Scanner) (State, error) {
 	if err != nil {
 		return res, errors.New(scanner.Text())
 	}
+
+	res.queue = make([]visitorName, 0)
+	res.visitors = make([]visitorName, 0)
 
 	return res, nil
 }
