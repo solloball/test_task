@@ -29,10 +29,6 @@ func Run(scanner *bufio.Scanner) {
 		}
 
 		handleEvent(event, &state)
-
-		for _, t := range state.tables {
-			log.Println("!!!", t, "!!!")
-		}
 	}
 
 	removeVisitors(&state)

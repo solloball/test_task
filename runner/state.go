@@ -1,6 +1,8 @@
 package runner
 
-import "time"
+import (
+	"time"
+)
 
 type usage struct {
 	time time.Time
@@ -37,7 +39,7 @@ func (t *table) sit(tm time.Time, name visitorName) {
 func (t *table) leave(tm time.Time) {
 	duration := tm.Sub(t.sittingTime)
 
-	t.paidHours += int(duration.Hours())
+	t.paidHours += int((duration.Hours())) + 1
 	t.usageTime += duration
 	t.IsEmpty = true
 }
