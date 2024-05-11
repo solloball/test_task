@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/solloball/test_task/parser"
+	"github.com/solloball/test_task/runner"
 )
 
 func Execute() {
@@ -23,5 +23,5 @@ func Execute() {
 
 	scanner := bufio.NewScanner(file)
 
-	parser.Parse(scanner)
+	runner.Run(scanner)
 }
